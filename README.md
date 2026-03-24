@@ -171,4 +171,4 @@ Two steering documents provide persistent context to the agent across all intera
 
 ## Demo Video
 
-[*[Demo video link will be added here]*](https://youtu.be/CDZN1hn4Ey8)
+[*[Click here to see UW Flow in Action!]*](https://youtu.be/CDZN1hn4Ey8)
