@@ -151,7 +151,7 @@ Two steering documents provide persistent context to the agent across all intera
 - **Map integration**: Getting Leaflet to render campus paths correctly required careful coordinate mapping of 20+ UW buildings and a bidirectional path graph.
 - **Ask Flow NLP**: Building a useful chatbot without an LLM meant designing smart keyword extraction and fuzzy matching against live data. It handles questions like "how busy is Suzzallo?" and "where should I eat?" surprisingly well.
 
-### What We Learned
+### What I Learned
 
 - Spec-driven development with Kiro kept us from building the wrong thing. Having requirements and design locked down before coding meant fewer rewrites.
 - A single-file architecture can be surprisingly powerful for demos. Our `demo-server.js` packs Dijkstra's algorithm, venue tracking, crowd density, route voting, and NLP chat into one file.
@@ -161,6 +161,7 @@ Two steering documents provide persistent context to the agent across all intera
 
 - **Real weather data**: Integrate OpenWeatherMap or UW's own weather station API for live rain forecasts
 - **Mobile app**: The original React Native design is ready to build from the spec
+- **Connect with UW Locations**: Have UW locations update their information so UW Flow can have even more accurate readings
 - **Real-time updates**: WebSocket-powered heatmaps that update as students check in
 - **Indoor routing**: Add building floor plans for indoor navigation between classes
 - **Accessibility**: Screen reader support, high-contrast mode, voice-guided navigation
@@ -170,20 +171,4 @@ Two steering documents provide persistent context to the agent across all intera
 
 ## Demo Video
 
-*[Demo video link will be added here]*
-
-<!-- Record a 3-minute video showing:
-1. Stay Dry: Select two buildings, see driest vs fastest routes on the map, upvote a route
-2. Wait Times: Browse venues, use filters, check in, ask Ask Flow a question
-3. Busy Huskies: Filter study spots, check density bars, chat with Ask Flow
--->
-
----
-
-## Team
-
-Built for the Kiro hackathon by a solo developer + Kiro as the AI pair programmer.
-
-## License
-
-MIT
+[*[Demo video link will be added here]*](https://youtu.be/CDZN1hn4Ey8)
