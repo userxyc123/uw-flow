@@ -1,128 +1,69 @@
 # UW FLOW 🌦️🌸
 
-**Real-Time Campus Movement & Comfort Assistant for University of Washington Students**
+**How I Built a Campus Movement App for UW Using Kiro**
 
 > Built with [Kiro](https://kiro.dev) — spec-driven development, agent hooks, and steering docs.
 
 ---
 
-## Problem Statement
+## The Problem
 
-UW's campus is massive, rainy, and crowded. Students waste time walking through downpours when covered routes exist, wait in long lines at dining halls without knowing alternatives, and struggle to find quiet study spots during peak hours. There's no unified tool that helps Huskies navigate campus intelligently based on real-time conditions.
+If you've walked across UW's campus in the rain, you know the feeling. Soaked pants, wet socks, shoes squelching into your next lecture. The thing is — there are covered routes between most buildings. Tunnels, covered walkways, building cut-throughs. We just don't know about them.
 
-## Target Users
+And it's not just rain. You walk to Suzzallo to study and it's packed. You head to the HUB for food and the line is 20 minutes deep. There's no way to know before you get there.
 
-- UW students navigating between classes in the rain
-- Students looking for quiet study spaces or short food lines
-- Anyone on campus who wants to move smarter, not harder
+UW has over 47,000 students. On any given day, thousands of us are making these blind decisions — getting wet, wasting time, turning around. UW Flow fixes that.
 
-## Solution Summary
+## What I Built
 
-UW Flow is a single-page web app with three core features:
+UW Flow is a real-time campus assistant with three tabs:
 
-| Tab | What it does |
-|-----|-------------|
-| **Stay Dry** | Finds the driest walking route between buildings using Dijkstra's algorithm, visualized on a Leaflet map with purple/gold paths. Huskies can upvote the best routes. |
-| **Wait Times** | Shows real-time wait estimates for 11 campus venues (dining, gym, library, health) with predictions, check-ins, and category filters. |
-| **Busy Huskies** | Displays study spot density across 14 campus buildings with filter chips (Libraries, Buildings, Outdoor, Quiet Only) and density bars. |
+**Stay Dry** — Pick two buildings and get the driest walking route, visualized on a Leaflet map with purple and gold paths (UW colors, obviously). Routes are computed using Dijkstra's algorithm weighted by rain exposure. Multiple routes show up as separate bars sorted by community votes — if other Huskies found a good path, they upvote it.
 
-All three tabs include **Ask Flow**, an interactive campus assistant that answers natural language questions like "how busy is Suzzallo?" using live data.
+**Wait Times** — Real-time wait estimates for 11 campus venues: dining halls, the gym, libraries, even Hall Health. Each venue card shows a density bar, predictions at +10/+20/+30 minutes, and a "Go Now" or "Go Later" recommendation. Filter by category — dining, library, gym, health, or just short waits.
 
-## Key Features
+**Busy Huskies** — Study spot density across 14 campus buildings. Filter by libraries, buildings, outdoor spots, or quiet-only. Each card shows how crowded a spot is with a visual density bar. Perfect for finals week when every seat matters.
 
-- Driest vs fastest route comparison with interactive Leaflet map
-- Community upvoting on routes ("12 Huskies recommend this")
-- Venue wait time predictions (+10m, +20m, +30m forecasts)
-- Crowd-sourced check-ins to keep data fresh
-- Smart filter chips and search across all tabs
-- Ask Flow chatbot powered by server-side NLP matching
-- Cherry blossom SVG banner (because UW + cherry blossoms)
-- Fully responsive, no build step required
+All three tabs include **Ask Flow** — a chatbot on the right side that answers questions like "how busy is Suzzallo?" or "where should I eat?" using live data from the server.
 
----
+The whole thing is crowd-sourced. Every check-in, every upvote, every interaction makes the data better for everyone. The more Huskies use it, the smarter it gets.
 
-## Setup Instructions
+## How I Used Kiro
 
-```bash
-# 1. Install the only dependency
-npm install express
+This project was built entirely using [Kiro's](https://kiro.dev) spec-driven development workflow. I didn't just use Kiro as a code assistant — I used it as a design partner from the very first idea.
 
-# 2. Start the server
-node demo-server.js
+### Spec-Driven Development
 
-# 3. Open in your browser
-# http://localhost:3000
-```
+I started with a rough idea: "campus app for UW students." Kiro helped me turn that into:
 
-That's it. No build step, no TypeScript compilation, no database. One dependency, one command.
+1. **Requirements** — 7 formal requirements with acceptance criteria covering dry-route navigation, wait times, crowd heatmaps, smart routing, alerts, check-ins, and the Ask Flow assistant. We went through multiple review cycles before writing any code.
 
----
+2. **Design** — A full technical design: microservices architecture diagram, data models, API contracts, algorithm pseudocode for Dijkstra's dry-route engine, 22 correctness properties, and component interaction flows.
 
-## Architecture Decisions
+3. **Tasks** — 15 implementation tasks with sub-tasks, each mapped back to specific requirements. Kiro executed these sequentially, building out the monorepo package by package.
 
-### Why a standalone Express server?
-
-We started with a full microservices architecture (5 TypeScript services, PostgreSQL+PostGIS, Redis, WebSocket layer) — you can see the original design in `.kiro/specs/uw-flow/design.md`. For the hackathon demo, we consolidated everything into a single `demo-server.js` file to eliminate infrastructure complexity and make the app instantly runnable.
-
-### Tech choices
-
-| Choice | Why |
-|--------|-----|
-| **Plain JS + Express** | Zero build step, instant startup, easy to demo |
-| **Leaflet.js (CDN)** | Free, open-source maps with no API key required |
-| **In-memory data** | No database setup — 20 buildings, 11 venues, path graph all live in memory |
-| **Dijkstra's algorithm** | Classic shortest-path adapted for "driest" routing by weighting edges on rain exposure |
-| **Server-side NLP matching** | Ask Flow chat uses keyword extraction and fuzzy matching against live venue/building data |
-
-### Trade-offs
-
-- **No persistence**: Data resets on server restart. Fine for a demo; production would use PostgreSQL+PostGIS.
-- **Simulated data**: Wait times and crowd density use randomized values with realistic distributions rather than real sensor data.
-- **Single process**: Everything runs in one Node.js process. The microservices design in the spec shows how this would scale.
-
-### Security and Scalability (production path)
-
-- JWT auth via API Gateway (designed in spec, not needed for demo)
-- Rate limiting on check-in and vote endpoints
-- Redis caching layer for route computations and wait time aggregations
-- WebSocket for real-time heatmap updates instead of polling
-- PostGIS for proper geospatial queries at scale
-
----
-
-## Kiro Usage — Spec-Driven Development
-
-This project was built entirely using [Kiro's](https://kiro.dev) spec-driven development workflow. The `.kiro/specs/uw-flow/` directory contains the full spec that guided implementation:
-
-### The Workflow
-
-1. **Requirements** (`requirements.md`) — Started with a rough idea ("campus app for UW students") and iteratively refined it into 7 formal requirements with acceptance criteria covering dry-route navigation, wait times, crowd heatmaps, smart routing, alerts, check-ins, and the Ask Flow assistant.
-
-2. **Design** (`design.md`) — Kiro generated a full technical design from the requirements: microservices architecture diagram (Mermaid), data models, API contracts, algorithm pseudocode for Dijkstra's dry-route engine, and component interaction flows.
-
-3. **Tasks** (`tasks.md`) — The design was broken into 15 implementation tasks with sub-tasks, each mapped back to specific requirements. Kiro executed these tasks sequentially, building out the monorepo package by package.
-
-### How Kiro Helped
-
-- **Spec iteration**: Requirements and design went through multiple review cycles before any code was written. This caught design issues early (e.g., the coverage score calculation, graceful degradation strategy).
-- **Task execution**: Each task was implemented by Kiro with full context of the spec, so the code stayed aligned with the design.
-- **Pivot support**: When we pivoted from microservices to a standalone demo server, Kiro adapted the implementation while preserving the core algorithms and data models from the original spec.
-- **UI iteration**: Multiple rounds of UI refinement (tab renaming, layout changes, filter chips, map integration, cherry blossoms) were handled conversationally with Kiro making changes and verifying them.
+The full spec lives in `.kiro/specs/uw-flow/` — requirements, design, and tasks are all there.
 
 ### Agent Hooks
 
-Three hooks automate quality checks during development:
+I set up three hooks that automated quality checks during development:
 
-- **Spec Alignment Check** (`preTaskExecution`) — Before each spec task starts, the agent reviews the task against `requirements.md` and `design.md` to ensure implementation stays aligned with the spec. This caught potential deviations early, especially during the microservices-to-demo pivot.
-- **Validate Demo Server** (`fileEdited` → `demo-server.js`) — Runs `node --check demo-server.js` on every save to catch syntax errors instantly. Since the entire backend lives in one file, a single typo could break everything — this hook prevented that.
-- **UW Branding Review** (`fileEdited` → `demo.html`) — When the frontend is edited, the agent reviews changes to verify UW branding consistency (purple `#4b2e83`, gold `#b7a57a`, cherry blossom theming). This was essential during the many rounds of UI iteration.
+- **Spec Alignment Check** — Before each spec task starts, the agent reviews the task against the requirements and design docs to make sure implementation stays on track. This was especially useful during the pivot from microservices to a single-file demo.
+- **Validate Demo Server** — Runs `node --check demo-server.js` every time I save the backend. Since the entire server lives in one file, a single typo could break everything. This hook caught issues instantly.
+- **UW Branding Review** — When I edit the frontend, the agent checks that UW branding is consistent — purple `#4b2e83`, gold `#b7a57a`, cherry blossom theming. Essential during the many rounds of UI iteration.
 
 ### Steering Files
 
-Two steering documents provide persistent context to the agent across all interactions:
+Two steering documents give the agent persistent context:
 
-- **`project-context.md`** (always included) — Gives the agent full project context: architecture, key algorithms, UW branding colors, how to run the app, and where the spec files live. This meant the agent never lost context between conversations.
-- **`coding-standards.md`** (included when editing code files) — Enforces coding standards: UW color palette usage, semantic HTML, API design patterns, error handling conventions. Automatically activates when any `.js`, `.ts`, `.tsx`, or `.html` file is in context.
+- **`project-context.md`** (always active) — Full project context: architecture, algorithms, UW branding, how to run the app, where the spec files live. The agent never lost context between conversations.
+- **`coding-standards.md`** (activates for code files) — Enforces coding standards: UW color palette, semantic HTML, API patterns, error handling. Automatically kicks in when any `.js`, `.ts`, `.tsx`, or `.html` file is in context.
+
+### The Pivot
+
+My biggest aha moment: the original design was a full microservices architecture — 5 TypeScript services, PostgreSQL+PostGIS, Redis, WebSocket layer. Ambitious, but too much infrastructure for a hackathon demo. Kiro helped me pivot to a single `demo-server.js` file while preserving the core algorithms and data models from the original spec. The microservices scaffolding is still in `packages/` — the spec shows how this would scale to production.
+
+Spec-driven development isn't slower than just coding — it's faster because you never backtrack.
 
 ### What's in `.kiro/`
 
@@ -141,34 +82,46 @@ Two steering documents provide persistent context to the agent across all intera
     └── tasks.md                         # 15 implementation tasks with sub-tasks
 ```
 
----
+## Challenges
 
-## Learning Journey
+**Scope management** — The microservices design was the right architecture for production but wrong for a hackathon timeline. Recognizing that early and pivoting to a single-file demo server saved the project. The algorithms stayed the same; only the infrastructure changed.
 
-### Challenges
+**Map integration** — Getting Leaflet to render campus paths correctly meant hand-mapping coordinates for 20+ UW buildings and building a bidirectional path graph with weighted edges. Not glamorous work, but it makes the Stay Dry tab actually useful.
 
-- **Scope management**: The original microservices design was ambitious for a hackathon. Pivoting to a single-file demo server was the right call — it preserved the algorithms while making the app instantly runnable.
-- **Map integration**: Getting Leaflet to render campus paths correctly required careful coordinate mapping of 20+ UW buildings and a bidirectional path graph.
-- **Ask Flow NLP**: Building a useful chatbot without an LLM meant designing smart keyword extraction and fuzzy matching against live data. It handles questions like "how busy is Suzzallo?" and "where should I eat?" surprisingly well.
+**Ask Flow without an LLM** — I wanted a chatbot that could answer "how busy is Suzzallo?" without calling an external AI API. The solution was server-side keyword extraction and fuzzy matching against live venue and building data. It handles natural language questions surprisingly well for a pattern matcher.
 
-### What I Learned
+## What I Learned
 
-- Spec-driven development with Kiro kept us from building the wrong thing. Having requirements and design locked down before coding meant fewer rewrites.
-- A single-file architecture can be surprisingly powerful for demos. Our `demo-server.js` packs Dijkstra's algorithm, venue tracking, crowd density, route voting, and NLP chat into one file.
-- UW students really do need this — the rain routing alone would save a lot of soggy walks across Red Square.
+- Spec-driven development with Kiro kept me from building the wrong thing. Having requirements and design locked down before coding meant fewer rewrites and zero "wait, what was this supposed to do?" moments.
+- A single-file architecture can be surprisingly powerful for demos. `demo-server.js` packs Dijkstra's algorithm, venue tracking, crowd density, route voting, and NLP chat into one runnable file.
+- UW students really do need this. The rain routing alone would save a lot of soggy walks across Red Square.
 
-### Forward Thinking
+## What's Next
 
-- **Real weather data**: Integrate OpenWeatherMap or UW's own weather station API for live rain forecasts
-- **Mobile app**: The original React Native design is ready to build from the spec
-- **Connect with UW Locations**: Have UW locations update their information so UW Flow can have even more accurate readings
-- **Real-time updates**: WebSocket-powered heatmaps that update as students check in
-- **Indoor routing**: Add building floor plans for indoor navigation between classes
-- **Accessibility**: Screen reader support, high-contrast mode, voice-guided navigation
-- **ML predictions**: Train wait time models on historical check-in data instead of simple averaging
+- **Real weather data** — Integrate OpenWeatherMap or UW's own weather station API for live rain forecasts instead of simulated data
+- **Connect with UW locations** — Have campus venues update their information directly so UW Flow has even more accurate readings
+- **Mobile app** — The original React Native design is ready to build from the spec
+- **Real-time updates** — WebSocket-powered heatmaps that update as students check in
+- **Indoor routing** — Add building floor plans for indoor navigation between classes
+- **ML predictions** — Train wait time models on historical check-in data instead of simple averaging
+- **Accessibility** — Screen reader support, high-contrast mode, voice-guided navigation
 
 ---
+
+## Try It
+
+```bash
+npm install express
+node demo-server.js
+# Open http://localhost:3000
+```
+
+One dependency. One command. No build step.
 
 ## Demo Video
 
-[*[Click here to see UW Flow in Action!]*](https://youtu.be/CDZN1hn4Ey8)
+[Click here to see UW Flow in action!](https://youtu.be/CDZN1hn4Ey8)
+
+---
+
+Built with [Kiro](https://kiro.dev), Express, Leaflet.js, and Dijkstra's algorithm. Built for UW, by a Husky. 🐺💜
