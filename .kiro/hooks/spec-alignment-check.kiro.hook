@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Spec Alignment Check",
+  "description": "Before executing any spec task, the agent reviews the task against requirements.md and design.md to ensure implementation stays aligned with the spec.",
+  "version": "1",
+  "when": {
+    "type": "preTaskExecution"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Before starting this task, review .kiro/specs/uw-flow/requirements.md and .kiro/specs/uw-flow/design.md to confirm the task implementation will align with the documented requirements and design decisions. Flag any potential deviations."
+  }
+}

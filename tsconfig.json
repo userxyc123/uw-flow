@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "lib": ["ES2020"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "composite": true
+  },
+  "references": [
+    { "path": "packages/shared-types" },
+    { "path": "packages/dry-route-engine" },
+    { "path": "packages/wait-time-service" },
+    { "path": "packages/heatmap-service" },
+    { "path": "packages/route-planner" },
+    { "path": "packages/alert-service" },
+    { "path": "packages/api-gateway" }
+  ],
+  "include": [],
+  "exclude": ["node_modules", "dist"]
+}

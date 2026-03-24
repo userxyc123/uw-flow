@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "Validate Demo Server",
+  "description": "Automatically checks demo-server.js for syntax errors whenever it's saved, ensuring the single-file backend stays runnable after every edit.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "demo-server.js"
+    ]
+  },
+  "then": {
+    "type": "runCommand",
+    "command": "node --check demo-server.js"
+  }
+}

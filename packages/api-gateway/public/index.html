@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UW Flow — Campus Movement Assistant</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f4f5f7; color: #333; }
+    .header { background: #4b2e83; color: #fff; padding: 20px 24px; }
+    .header h1 { font-size: 24px; font-weight: 700; }
+    .header p { opacity: 0.8; font-size: 14px; margin-top: 4px; }
+    .tabs { display: flex; background: #fff; border-bottom: 2px solid #eee; padding: 0 16px; }
+    .tab { padding: 12px 20px; cursor: pointer; font-weight: 600; color: #888; border-bottom: 3px solid transparent; }
+    .tab.active { color: #4b2e83; border-bottom-color: #4b2e83; }
+    .tab:hover { color: #4b2e83; }
+    .content { max-width: 900px; margin: 20px auto; padding: 0 16px; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    .card { background: #fff; border-radius: 12px; padding: 18px; margin-bottom: 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .card h3 { font-size: 16px; margin-bottom: 8px; }
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+    .badge-green { background: #d4efdf; color: #27ae60; }
+    .badge-orange { background: #fdebd0; color: #e67e22; }
+    .badge-red { background: #fadbd8; color: #e74c3c; }
+    .badge-purple { background: #e8daef; color: #4b2e83; }
+    .btn { background: #4b2e83; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; }
+    .btn:hover { background: #3a2268; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    input[type="text"], input[type="number"] { border: 1px solid #ddd; border-radius: 8px; padding: 8px 12px; font-size: 14px; width: 120px; }
+    .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+    .stale { color: #e67e22; font-style: italic; font-size: 13px; }
+    .preds { display: flex; gap: 8px; margin-top: 8px; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <h1>🌦️ UW Flow</h1>
+    <p>Real-Time Campus Movement &amp; Comfort Assistant</p>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="showTab('routes')">🌧️ DryRoute</div>
+    <div class="tab" onclick="showTab('waits')">⏱️ Wait Times</div>
+    <div class="tab" onclick="showTab('heatmap')">🧭 Heatmap</div>
+    <div class="tab" onclick="showTab('alerts')">🔔 Alerts</div>
+  </div>
+
+  <div class="content">
+    <!-- DryRoute Panel -->
+    <div id="routes" class="panel active">
+      <div class="card">
+        <h3>Find the Driest Route</h3>
+        <div class="row">
+          <label>From: <input type="text" id="oLat" value="47.6553"> <input type="text" id="oLng" value="-122.3035"></label>
+          <label>To: <input type="text" id="dLat" value="47.6558"> <input type="text" id="dLng" value="-122.3049"></label>
+          <button class="btn" onclick="findRoutes()">Find Routes</button>
+        </div>
+      </div>
+      <div id="routeResults"></div>
+    </div>
+
+    <!-- Wait Times Panel -->
+    <div id="waits" class="panel">
+      <div id="venueList"><p>Loading venues...</p></div>
+    </div>
+
+    <!-- Heatmap Panel -->
+    <div id="heatmap" class="panel">
+      <div id="quietSpots"></div>
+      <div id="heatmapGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;"></div>
+    </div>
+
+    <!-- Alerts Panel -->
+    <div id="alerts" class="panel">
+      <div class="card">
+        <h3>Alert Preferences</h3>
+        <div id="alertPrefs"><p>Loading...</p></div>
+      </div>
+    </div>
+  </div>
+  <script>
+    const API = '';
+
+    function showTab(id) {
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      event.target.classList.add('active');
+      if (id === 'waits') loadVenues();
+      if (id === 'heatmap') loadHeatmap();
+      if (id === 'alerts') loadAlertPrefs();
+    }
+
+    async function findRoutes() {
+      const oLat = document.getElementById('oLat').value;
+      const oLng = document.getElementById('oLng').value;
+      const dLat = document.getElementById('dLat').value;
+      const dLng = document.getElementById('dLng').value;
+      const el = document.getElementById('routeResults');
+      el.innerHTML = '<p>Searching...</p>';
+      try {
+        const res = await fetch(`${API}/api/routes/dry?origin_lat=${oLat}&origin_lng=${oLng}&dest_lat=${dLat}&dest_lng=${dLng}`);
+        const routes = await res.json();
+        if (!routes.length) { el.innerHTML = '<div class="card">No routes found.</div>'; return; }
+        el.innerHTML = routes.map(r => `
+          <div class="card">
+            <h3>Route ${r.route_id.slice(0,8)}...</h3>
+            <span class="badge badge-purple">${r.coverage_score}% covered</span>
+            <p>Distance: ${Math.round(r.total_distance_meters)}m · Time: ${r.estimated_time_minutes.toFixed(1)} min</p>
+            ${r.staleness_warning ? '<p class="stale">⚠ Weather data may be stale</p>' : ''}
+            <p>Segments: ${r.segments.length}</p>
+          </div>
+        `).join('');
+      } catch(e) { el.innerHTML = '<div class="card">Error fetching routes: ' + e.message + '</div>'; }
+    }
+    async function loadVenues() {
+      const el = document.getElementById('venueList');
+      try {
+        const res = await fetch(`${API}/api/venues`);
+        const venues = await res.json();
+        const waits = await Promise.all(venues.map(async v => {
+          const wr = await fetch(`${API}/api/venues/${v.venue_id}/wait-time`);
+          return { venue: v, wt: await wr.json() };
+        }));
+        el.innerHTML = waits.map(({venue, wt}) => {
+          const predHtml = wt.predictions.map(p => {
+            const cls = p.recommendation === 'Go Now' ? 'badge-green' : p.recommendation === 'Go Later' ? 'badge-orange' : '';
+            return `<span class="badge ${cls}">+${p.minutes_from_now}m: ${p.predicted_wait_minutes}min ${p.recommendation || ''}</span>`;
+          }).join(' ');
+          return `
+            <div class="card">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <h3>${venue.name}</h3>
+                ${wt.unverified ? '<span class="stale">unverified</span>' : ''}
+              </div>
+              <p style="font-size:22px;font-weight:700;color:#4b2e83">${wt.current_minutes} min wait</p>
+              <p style="color:#888;font-size:12px">${wt.checkin_count} recent check-ins</p>
+              <div class="preds">${predHtml}</div>
+              <button class="btn" style="margin-top:10px" onclick="checkin('${venue.venue_id}')">Check In</button>
+            </div>`;
+        }).join('');
+      } catch(e) { el.innerHTML = '<div class="card">Error: ' + e.message + '</div>'; }
+    }
+
+    async function checkin(venueId) {
+      const wait = prompt('How many minutes is the wait?', '5');
+      if (!wait) return;
+      const crowd = prompt('Crowd level? (low/medium/high)', 'medium');
+      if (!crowd) return;
+      try {
+        const res = await fetch(`${API}/api/venues/${venueId}/checkins`, {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ reported_wait_minutes: +wait, crowd_level: crowd })
+        });
+        const data = await res.json();
+        if (data.location_confirmation_required) {
+          if (confirm('Please confirm you are at this venue.')) {
+            await fetch(`${API}/api/venues/${venueId}/checkins?confirm=true`, {
+              method: 'POST', headers: {'Content-Type':'application/json'},
+              body: JSON.stringify({ reported_wait_minutes: +wait, crowd_level: crowd })
+            });
+          }
+        }
+        alert('Check-in submitted!');
+        loadVenues();
+      } catch(e) { alert('Error: ' + e.message); }
+    }
+    async function loadHeatmap() {
+      try {
+        const [snapRes, qsRes] = await Promise.all([
+          fetch(`${API}/api/heatmap`), fetch(`${API}/api/heatmap/quiet-spots`)
+        ]);
+        const snap = await snapRes.json();
+        const qs = await qsRes.json();
+
+        const qsEl = document.getElementById('quietSpots');
+        qsEl.innerHTML = '<div class="card"><h3>🧘 Top Quiet Study Spots</h3>' +
+          qs.map(c => `<p><span class="badge badge-green">${c.label}</span> ${c.cell_id} — density ${c.density_score}</p>`).join('') +
+          '</div>';
+
+        const gridEl = document.getElementById('heatmapGrid');
+        const labelColor = l => l === 'Quiet' ? '#27ae60' : l === 'Moderate' ? '#f39c12' : '#e74c3c';
+        gridEl.innerHTML = snap.cells.map(c => `
+          <div class="card" style="border-left:4px solid ${labelColor(c.label)};cursor:pointer" onclick="showCell('${c.cell_id}')">
+            <p style="font-size:12px;color:#888">${c.cell_id}</p>
+            <p style="color:${labelColor(c.label)};font-weight:700">${c.label}</p>
+            <p style="font-size:12px">Density: ${c.density_score}</p>
+          </div>
+        `).join('');
+      } catch(e) { document.getElementById('quietSpots').innerHTML = '<div class="card">Error: ' + e.message + '</div>'; }
+    }
+
+    async function showCell(cellId) {
+      try {
+        const res = await fetch(`${API}/api/heatmap/area/${cellId}`);
+        const cell = await res.json();
+        alert(`${cellId}\nLabel: ${cell.label}\nDensity: ${cell.density_score}\nUpdated: ${cell.updated_at}`);
+      } catch(e) { alert('Error: ' + e.message); }
+    }
+
+    async function loadAlertPrefs() {
+      const el = document.getElementById('alertPrefs');
+      try {
+        const res = await fetch(`${API}/api/alerts/preferences?user_id=demo-user`);
+        const p = await res.json();
+        el.innerHTML = `
+          <p>Wait time alerts: <strong>${p.wait_time_alerts_enabled ? 'ON' : 'OFF'}</strong> (threshold: ${p.wait_time_threshold_minutes} min)</p>
+          <p>Rain alerts: <strong>${p.rain_alerts_enabled ? 'ON' : 'OFF'}</strong></p>
+          <p>Quiet spot alerts: <strong>${p.quiet_spot_alerts_enabled ? 'ON' : 'OFF'}</strong></p>
+          <p>Favorite spots: ${p.favorite_study_spots.length ? p.favorite_study_spots.join(', ') : 'None'}</p>
+        `;
+      } catch(e) { el.innerHTML = 'Error: ' + e.message; }
+    }
+  </script>
+</body>
+</html>

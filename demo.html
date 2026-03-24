@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UW Flow</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#f0f0f5;color:#2d2d2d}
+.hdr{background:linear-gradient(135deg,#4b2e83 0%,#3a2268 100%);color:#fff;padding:20px 28px;border-bottom:4px solid #b7a57a;display:flex;align-items:center;gap:16px}
+.hdr h1{font-size:28px;letter-spacing:2px;font-weight:800}
+.hdr p{opacity:.8;font-size:13px;margin-top:2px}
+.tabs{display:flex;background:#fff;border-bottom:1px solid #e0e0e0;padding:0 20px;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.tab{padding:15px 28px;cursor:pointer;font-weight:600;color:#999;border-bottom:3px solid transparent;transition:.2s;font-size:14px}
+.tab.active{color:#4b2e83;border-bottom-color:#4b2e83}.tab:hover{color:#4b2e83}
+.wrap{max-width:1100px;margin:20px auto;padding:0 20px}
+.panel{display:none}.panel.active{display:block}
+.card{background:#fff;border-radius:14px;padding:18px;margin-bottom:12px;box-shadow:0 2px 12px rgba(0,0,0,.06);transition:transform .15s,box-shadow .15s}
+.card:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,0,0,.1)}
+.card h3{font-size:15px;margin-bottom:6px;color:#4b2e83}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;margin:2px}
+.bg{background:#d4efdf;color:#1e8449}.bo{background:#fef3e2;color:#d68910}.br{background:#fadbd8;color:#c0392b}.bp{background:#ede7f6;color:#4b2e83}
+.btn{background:#4b2e83;color:#fff;border:none;padding:10px 22px;border-radius:10px;cursor:pointer;font-weight:600;font-size:14px;transition:background .2s}
+.btn:hover{background:#3a2268}
+.btn-sm{padding:6px 14px;font-size:12px;border-radius:8px}
+.btn-gold{background:#b7a57a;color:#fff}.btn-gold:hover{background:#a08c5a}
+select,input[type=text]{border:1.5px solid #e0e0e0;border-radius:10px;padding:9px 14px;font-size:14px;transition:border-color .2s}
+select:focus,input[type=text]:focus{border-color:#4b2e83;outline:none}
+select{min-width:180px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+</style>
+</head>
+<body>
+<style>
+.seg{padding:8px 12px;border-left:3px solid #ccc;margin:4px 0;font-size:13px;border-radius:0 6px 6px 0}
+.seg.covered{border-left-color:#27ae60;background:#f0faf4}
+.seg.open{border-left-color:#e74c3c;background:#fef5f5}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cell{border-left:4px solid #ccc;transition:transform .15s}.cell:hover{transform:translateY(-2px)}
+.quiet{border-left-color:#27ae60}.moderate{border-left-color:#f39c12}.busy{border-left-color:#e74c3c}
+.venue-card{display:flex;justify-content:space-between;align-items:flex-start}
+.venue-left{flex:1}.venue-wait{font-size:26px;font-weight:700;color:#4b2e83;min-width:70px;text-align:right}
+.preds{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}
+.pred{padding:3px 8px;border-radius:6px;font-size:11px}
+.empty{text-align:center;color:#999;padding:30px}
+.search-box{width:100%;padding:10px 14px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:14px;margin-bottom:12px;transition:border-color .2s}
+.search-box:focus{border-color:#4b2e83;outline:none}
+.stale{color:#e67e22;font-style:italic;font-size:12px}
+.two-col{display:grid;grid-template-columns:1fr 380px;gap:20px;align-items:start}
+.chat-panel{background:#fff;border-radius:14px;padding:18px;box-shadow:0 2px 12px rgba(0,0,0,.06);position:sticky;top:20px}
+.chat-panel h3{font-size:16px;color:#4b2e83;margin-bottom:10px}
+.chat-msgs{height:360px;overflow-y:auto;font-size:13px;padding-right:4px}
+.chat-msg{padding:10px 14px;margin:6px 0;border-radius:12px;line-height:1.5;white-space:pre-line}
+.chat-user{background:#ede7f6;text-align:right;margin-left:40px;border-bottom-right-radius:4px}
+.chat-bot{background:#f5f5f5;margin-right:40px;border-bottom-left-radius:4px}
+.chat-input{display:flex;gap:8px;margin-top:12px}
+.chat-input input{flex:1;border:1.5px solid #e0e0e0;border-radius:10px;padding:10px 14px;font-size:14px}
+.chat-input input:focus{border-color:#4b2e83;outline:none}
+.filters{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.chip{padding:6px 16px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid #e0e0e0;background:#fff;color:#666;transition:.2s}
+.chip.active{background:#4b2e83;color:#fff;border-color:#4b2e83}
+.chip:hover{border-color:#4b2e83}
+.density-bar{height:6px;border-radius:3px;background:#eee;margin-top:8px;overflow:hidden}
+.density-fill{height:100%;border-radius:3px;transition:width .3s}
+.vote-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 16px;border-radius:20px;border:1.5px solid #e0e0e0;background:#fff;color:#666;font-size:13px;font-weight:600;cursor:pointer;transition:.2s}
+.vote-btn:hover{border-color:#4b2e83;color:#4b2e83;background:#ede7f6}
+.vote-btn.voted{border-color:#4b2e83;color:#fff;background:#4b2e83}
+.vote-count{font-weight:700}
+.route-bar{background:#fff;border-radius:14px;padding:16px 18px;margin-bottom:10px;box-shadow:0 2px 12px rgba(0,0,0,.06);cursor:pointer;border-left:5px solid #e0e0e0;transition:all .2s}
+.route-bar:hover{box-shadow:0 4px 16px rgba(0,0,0,.1);transform:translateY(-1px)}
+.route-bar.active{border-left-color:#4b2e83;background:#faf8ff}
+.route-bar .route-header{display:flex;align-items:center;justify-content:space-between}
+.route-bar .route-info{display:flex;align-items:center;gap:8px}
+.route-bar .route-meta{display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap}
+.route-detail{display:none;margin-top:10px;padding-top:10px;border-top:1px solid #eee}
+.route-bar.active .route-detail{display:block}
+#routeMap{height:380px;border-radius:14px;margin-bottom:14px;display:none;box-shadow:0 2px 12px rgba(0,0,0,.08)}
+</style>
+<div class="hdr">
+<svg width="60" height="60" viewBox="0 0 60 60" style="flex-shrink:0;opacity:.9">
+<path d="M10 55 Q15 40 20 30 Q25 20 35 12" stroke="#b7a57a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+<path d="M20 30 Q12 25 8 18" stroke="#b7a57a" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+<path d="M28 20 Q35 22 40 18" stroke="#b7a57a" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+<circle cx="35" cy="12" r="6" fill="#ffb7c5" opacity=".85"/><circle cx="35" cy="12" r="3" fill="#ff8fa3" opacity=".7"/>
+<circle cx="8" cy="18" r="5.5" fill="#ffb7c5" opacity=".8"/><circle cx="8" cy="18" r="2.8" fill="#ff8fa3" opacity=".65"/>
+<circle cx="40" cy="18" r="5" fill="#ffb7c5" opacity=".75"/><circle cx="40" cy="18" r="2.5" fill="#ff8fa3" opacity=".6"/>
+<circle cx="22" cy="26" r="4.5" fill="#ffb7c5" opacity=".7"/><circle cx="22" cy="26" r="2.2" fill="#ff8fa3" opacity=".55"/>
+<circle cx="15" cy="35" r="4" fill="#ffc8d6" opacity=".6"/><circle cx="15" cy="35" r="2" fill="#ffb7c5" opacity=".5"/>
+<circle cx="30" cy="8" r="2" fill="#ffc8d6" opacity=".5"/>
+<circle cx="44" cy="14" r="1.8" fill="#ffc8d6" opacity=".45"/>
+<circle cx="5" cy="12" r="1.5" fill="#ffc8d6" opacity=".4"/>
+</svg>
+<div><h1>UW FLOW</h1><p>Real-Time Campus Movement and Comfort Assistant</p></div>
+</div>
+<div class="tabs">
+<div class="tab active" onclick="showTab('routes',this)">Stay Dry</div>
+<div class="tab" onclick="showTab('waits',this)">Wait Times</div>
+<div class="tab" onclick="showTab('heatmap',this)">Busy Huskies</div>
+</div>
+<div class="wrap">
+<div id="routes" class="panel active">
+<div class="card"><h3>Find the Driest Route</h3>
+<div class="row">
+<label>From: <select id="fromBldg"></select></label>
+<label>To: <select id="toBldg"></select></label>
+<button class="btn" onclick="findRoutes()">Find Routes</button>
+</div></div>
+<div id="routeMap"></div>
+<div id="routeResults"><p class="empty">Select two buildings and click Find Routes.</p></div>
+</div>
+<div id="waits" class="panel">
+<div class="two-col">
+<div>
+<div class="filters" id="venueFilters">
+<div class="chip active" onclick="setVenueFilter('all',this)">All</div>
+<div class="chip" onclick="setVenueFilter('dining',this)">Dining</div>
+<div class="chip" onclick="setVenueFilter('library',this)">Library</div>
+<div class="chip" onclick="setVenueFilter('gym',this)">Gym</div>
+<div class="chip" onclick="setVenueFilter('health',this)">Health</div>
+<div class="chip" onclick="setVenueFilter('short',this)">Short Wait</div>
+</div>
+<input type="text" class="search-box" id="venueSearch" placeholder="Search venues..." oninput="filterVenues()">
+<div id="venueList" class="grid"><p class="empty">Loading venues...</p></div>
+</div>
+<div class="chat-panel">
+<h3>Ask Flow</h3>
+<div class="chat-msgs" id="chatMsgsWait">
+<div class="chat-msg chat-bot">Hey! Ask me about wait times:
+- "How long is the Starbucks line?"
+- "Best place to eat?"
+- "Where's the shortest wait?"</div>
+</div>
+<div class="chat-input">
+<input type="text" id="chatInputWait" placeholder="Ask about wait times..." onkeydown="if(event.key==='Enter')askFlowWait()">
+<button class="btn btn-sm" onclick="askFlowWait()">Ask</button>
+</div>
+</div>
+</div>
+</div>
+<div id="heatmap" class="panel">
+<div class="two-col">
+<div>
+<div class="filters" id="heatFilters">
+<div class="chip active" onclick="setFilter('all',this)">All</div>
+<div class="chip" onclick="setFilter('library',this)">Libraries</div>
+<div class="chip" onclick="setFilter('building',this)">Buildings</div>
+<div class="chip" onclick="setFilter('outdoor',this)">Outdoor</div>
+<div class="chip" onclick="setFilter('quiet',this)">Quiet Only</div>
+<div class="chip" onclick="setFilter('busy',this)">Busy</div>
+</div>
+<input type="text" class="search-box" id="heatmapSearch" placeholder="Search study spots and buildings..." oninput="filterHeatmap()">
+<div id="heatmapGrid" class="grid"></div>
+</div>
+<div class="chat-panel">
+<h3>Ask Flow</h3>
+<div class="chat-msgs" id="chatMsgs">
+<div class="chat-msg chat-bot">Hey! I'm Flow, your campus assistant. Try asking:
+- "How busy is Suzzallo?"
+- "Where should I study?"
+- "Best place to eat?"</div>
+</div>
+<div class="chat-input">
+<input type="text" id="chatInput" placeholder="Ask about campus..." onkeydown="if(event.key==='Enter')askFlow()">
+<button class="btn btn-sm" onclick="askFlow()">Ask</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script>
+var allVenueData=[],allHeatmapData=[],routeMap=null,routeLayers=[],activeFilter='all';
+function showTab(id,el){
+document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active')});
+document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active')});
+document.getElementById(id).classList.add('active');el.classList.add('active');
+if(id==='waits')loadVenues();if(id==='heatmap')loadHeatmap();
+if(id==='routes'&&routeMap)setTimeout(function(){routeMap.invalidateSize()},100);
+}
+function loadBuildings(){
+fetch('/api/buildings').then(function(r){return r.json()}).then(function(bldgs){
+var f=document.getElementById('fromBldg'),t=document.getElementById('toBldg');
+window._buildings=bldgs;
+bldgs.forEach(function(b){
+var o1=document.createElement('option');o1.value=b.id;o1.textContent=b.name;f.appendChild(o1);
+var o2=document.createElement('option');o2.value=b.id;o2.textContent=b.name;t.appendChild(o2);
+});
+if(bldgs.length>1){f.value='savery';t.value='suzzallo';}
+});
+}
+loadBuildings();
+function initMap(){
+if(routeMap)return;
+document.getElementById('routeMap').style.display='block';
+routeMap=L.map('routeMap').setView([47.6555,-122.3070],16);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'OSM',maxZoom:19}).addTo(routeMap);
+}
+function clearMapLayers(){routeLayers.forEach(function(l){routeMap.removeLayer(l)});routeLayers=[];}
+function drawRoute(route,color,weight){
+if(!route.coords||route.coords.length<2)return;
+var ll=route.coords.map(function(c){return[c.lat,c.lng]});
+var line=L.polyline(ll,{color:color,weight:weight,opacity:0.85}).addTo(routeMap);routeLayers.push(line);
+route.coords.forEach(function(c){
+var ic=L.divIcon({className:'',html:'<div style="background:'+color+';color:#fff;padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;white-space:nowrap;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.2)">'+c.name+'</div>'});
+routeLayers.push(L.marker([c.lat,c.lng],{icon:ic}).addTo(routeMap));
+});
+routeMap.fitBounds(line.getBounds().pad(0.15));
+}
+</script>
+<script>
+var cachedRoutes=[],cachedFrom='',cachedTo='',selectedRouteIdx=0;
+var routeColors=['#4b2e83','#b7a57a','#2980b9','#27ae60'];
+function findRoutes(){
+var from=document.getElementById('fromBldg').value,to=document.getElementById('toBldg').value;
+var el=document.getElementById('routeResults');
+el.innerHTML='<p class="empty">Searching...</p>';
+initMap();clearMapLayers();
+cachedFrom=from;cachedTo=to;
+fetch('/api/routes/dry?from='+from+'&to='+to).then(function(r){return r.json()}).then(function(routes){
+if(routes.error){el.innerHTML='<div class="card">'+routes.error+'</div>';return;}
+if(!routes.length){el.innerHTML='<div class="card">No routes found.</div>';return;}
+cachedRoutes=routes;
+fetch('/api/routes/votes').then(function(r){return r.json()}).then(function(votes){
+routes.forEach(function(r,idx){r._voteKey=from+'-'+to+'-'+idx;r._votes=votes[r._voteKey]||0;});
+routes.sort(function(a,b){return b._votes-a._votes});
+selectedRouteIdx=0;
+renderRouteBars(routes);
+showRouteOnMap(0);
+});
+}).catch(function(e){el.innerHTML='<div class="card">Error: '+e.message+'</div>';});
+}
+function selectRoute(idx){
+selectedRouteIdx=idx;
+document.querySelectorAll('.route-bar').forEach(function(b,i){
+if(i===idx)b.classList.add('active');else b.classList.remove('active');
+});
+showRouteOnMap(idx);
+}
+function showRouteOnMap(idx){
+clearMapLayers();
+var r=cachedRoutes[idx];
+if(r)drawRoute(r,routeColors[idx%routeColors.length],6);
+}
+function renderRouteBars(routes){
+var el=document.getElementById('routeResults');
+var h='';
+routes.forEach(function(r,idx){
+var color=routeColors[idx%routeColors.length];
+var cc=r.coverage_score>60?'bg':'bo';
+var activeClass=idx===0?'active':'';
+h+='<div class="route-bar '+activeClass+'" onclick="selectRoute('+idx+')">';
+h+='<div class="route-header"><div class="route-info">';
+h+='<div style="width:14px;height:14px;border-radius:50%;background:'+color+';flex-shrink:0"></div>';
+h+='<h3 style="margin:0;font-size:15px">'+r.route_type+'</h3></div>';
+h+='<button class="vote-btn" id="vote-'+r._voteKey+'" onclick="event.stopPropagation();upvoteRoute(\''+r._voteKey+'\')">';
+h+='<span>&#9650;</span> <span class="vote-count" id="vc-'+r._voteKey+'">'+r._votes+'</span> Huskies</button></div>';
+h+='<div class="route-meta">';
+h+='<span class="badge bp">'+r.coverage_score+'% covered</span>';
+h+='<span class="badge '+cc+'">'+r.total_distance_meters+'m</span>';
+h+='<span style="font-size:13px">'+r.estimated_time_minutes+' min walk</span></div>';
+h+='<div class="route-detail">';
+h+='<p style="margin:0 0 8px;font-weight:600;font-size:13px">'+r.buildings.join(' > ')+'</p>';
+r.segments.forEach(function(s){
+var cls=s.covered?'covered':'open';
+var lbl=s.covered?('covered '+s.type):'exposed';
+h+='<div class="seg '+cls+'">'+s.from+' > '+s.to+' | '+s.distance_meters+'m | '+lbl+'</div>';
+});
+h+='</div></div>';
+});
+el.innerHTML=h;
+}
+function upvoteRoute(key){
+var btn=document.getElementById('vote-'+key);
+if(btn.classList.contains('voted'))return;
+btn.classList.add('voted');
+fetch('/api/routes/vote',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({route_key:key})})
+.then(function(r){return r.json()})
+.then(function(d){
+document.getElementById('vc-'+key).textContent=d.votes;
+});
+}
+</script>
+<script>
+var activeVenueFilter='all';
+function loadVenues(){
+var el=document.getElementById('venueList');
+fetch('/api/venues').then(function(r){return r.json()}).then(function(venues){
+return Promise.all(venues.map(function(v){
+return fetch('/api/venues/'+v.id+'/wait-time').then(function(wr){return wr.json()}).then(function(w){return Object.assign({},v,w)});
+}));
+}).then(function(waits){allVenueData=waits;applyVenueFilters();})
+.catch(function(e){el.innerHTML='<div class="card">Error: '+e.message+'</div>';});
+}
+function setVenueFilter(f,el){
+activeVenueFilter=f;
+document.querySelectorAll('#venueFilters .chip').forEach(function(c){c.classList.remove('active')});
+el.classList.add('active');
+applyVenueFilters();
+}
+function applyVenueFilters(){
+var q=document.getElementById('venueSearch').value.toLowerCase();
+var list=allVenueData;
+if(activeVenueFilter==='dining')list=list.filter(function(v){return v.category==='dining'});
+else if(activeVenueFilter==='library')list=list.filter(function(v){return v.category==='library'});
+else if(activeVenueFilter==='gym')list=list.filter(function(v){return v.category==='gym'});
+else if(activeVenueFilter==='health')list=list.filter(function(v){return v.category==='health'});
+else if(activeVenueFilter==='short')list=list.filter(function(v){return v.current_wait<10});
+if(q)list=list.filter(function(v){return v.name.toLowerCase().indexOf(q)!==-1||v.category.toLowerCase().indexOf(q)!==-1});
+renderVenues(list);
+}
+function renderVenues(list){
+var el=document.getElementById('venueList');
+if(!list.length){el.innerHTML='<p class="empty">No matching venues.</p>';return;}
+list.sort(function(a,b){return a.current_wait-b.current_wait});
+var maxWait=Math.max.apply(null,list.map(function(v){return v.current_wait}))||20;
+var h='';
+list.forEach(function(v){
+var pct=Math.min(100,Math.round((v.current_wait/maxWait)*100));
+var fillColor=v.current_wait<5?'#27ae60':(v.current_wait<12?'#f39c12':'#e74c3c');
+var cls=v.current_wait<5?'quiet':(v.current_wait<12?'moderate':'busy');
+var cc={dining:'bg',gym:'bo',library:'bp',advising:'bo',health:'br',retail:'bg',transit:'bp'};
+var cb=cc[v.category]||'bg';
+var stale=v.unverified?'<span class="stale">unverified</span>':'';
+h+='<div class="card cell '+cls+'">';
+h+='<div style="display:flex;justify-content:space-between;align-items:flex-start">';
+h+='<h3>'+v.name+'</h3>';
+h+='<div style="font-size:22px;font-weight:700;color:#4b2e83">'+v.current_wait+'<span style="font-size:11px;font-weight:400"> min</span></div></div>';
+h+='<span class="badge '+cb+'">'+v.category+'</span> '+stale;
+h+='<div class="density-bar"><div class="density-fill" style="width:'+pct+'%;background:'+fillColor+'"></div></div>';
+h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">';
+h+='<div class="preds" style="margin:0">';
+if(v.predictions){v.predictions.forEach(function(p){
+var col=p.predicted_wait<v.current_wait?'#27ae60':(p.predicted_wait>v.current_wait?'#e74c3c':'#888');
+var rec=p.recommendation?(' '+p.recommendation):'';
+h+='<div class="pred" style="background:'+col+'15;color:'+col+'">+'+p.minutes_from_now+'m: '+p.predicted_wait+'min'+rec+'</div>';
+});}
+h+='</div>';
+h+="<button class=\"btn btn-sm\" onclick=\"doCheckin('"+v.id+"')\">Check In</button>";
+h+='</div></div>';
+});
+el.innerHTML=h;
+}
+function filterVenues(){applyVenueFilters();}
+function doCheckin(vid){
+var w=prompt('Estimated wait time (minutes)?','5');if(w===null)return;
+var c=prompt('Crowd level? (low/medium/high)','medium');if(c===null)return;
+fetch('/api/venues/'+vid+'/checkin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({wait_minutes:parseInt(w)||5,crowd_level:c})})
+.then(function(){loadVenues()}).catch(function(e){alert('Failed: '+e.message)});
+}
+function askFlowWait(){
+var input=document.getElementById('chatInputWait'),q=input.value.trim();
+if(!q)return;
+var msgs=document.getElementById('chatMsgsWait');
+msgs.innerHTML+='<div class="chat-msg chat-user">'+q+'</div>';
+input.value='';
+fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:q})})
+.then(function(r){return r.json()})
+.then(function(d){
+msgs.innerHTML+='<div class="chat-msg chat-bot">'+d.reply+'</div>';
+msgs.scrollTop=msgs.scrollHeight;
+}).catch(function(){
+msgs.innerHTML+='<div class="chat-msg chat-bot">Sorry, something went wrong.</div>';
+msgs.scrollTop=msgs.scrollHeight;
+});
+}
+</script>
+<script>
+function loadHeatmap(){
+fetch('/api/heatmap').then(function(r){return r.json()}).then(function(d){
+var studyOnly=d.cells.filter(function(c){return c.study});
+allHeatmapData=studyOnly;applyFilters();
+}).catch(function(e){document.getElementById('heatmapGrid').innerHTML='<div class="card">Error: '+e.message+'</div>';});
+}
+function setFilter(f,el){
+activeFilter=f;
+document.querySelectorAll('#heatFilters .chip').forEach(function(c){c.classList.remove('active')});
+el.classList.add('active');
+applyFilters();
+}
+function applyFilters(){
+var q=document.getElementById('heatmapSearch').value.toLowerCase();
+var list=allHeatmapData;
+if(activeFilter==='library')list=list.filter(function(c){return c.type==='library'});
+else if(activeFilter==='building')list=list.filter(function(c){return c.type==='building'});
+else if(activeFilter==='outdoor')list=list.filter(function(c){return c.type==='outdoor'});
+else if(activeFilter==='quiet')list=list.filter(function(c){return c.label==='Quiet'});
+else if(activeFilter==='busy')list=list.filter(function(c){return c.label==='Busy'||c.label==='Moderate'});
+if(q)list=list.filter(function(c){return c.name.toLowerCase().indexOf(q)!==-1});
+renderHeatmap(list);
+}
+function renderHeatmap(cells){
+var el=document.getElementById('heatmapGrid');
+if(!cells.length){el.innerHTML='<p class="empty">No spots match your filters.</p>';return;}
+cells.sort(function(a,b){return a.density-b.density});
+var h='';
+cells.forEach(function(c){
+var cls=c.label==='Quiet'?'quiet':(c.label==='Moderate'?'moderate':'busy');
+var bc=cls==='quiet'?'bg':(cls==='moderate'?'bo':'br');
+var fillColor=cls==='quiet'?'#27ae60':(cls==='moderate'?'#f39c12':'#e74c3c');
+var typeLabel=c.type==='library'?'Library':(c.type==='outdoor'?'Outdoor':'Hall');
+h+='<div class="card cell '+cls+'"><h3>'+c.name+'</h3>';
+h+='<span class="badge '+bc+'">'+c.label+'</span> ';
+h+='<span class="badge bp">'+typeLabel+'</span>';
+h+='<div class="density-bar"><div class="density-fill" style="width:'+c.density+'%;background:'+fillColor+'"></div></div>';
+h+='<div style="font-size:11px;color:#999;margin-top:4px">'+c.density+'% capacity</div></div>';
+});
+el.innerHTML=h;
+}
+function filterHeatmap(){applyFilters();}
+</script>
+<script>
+function askFlow(){
+var input=document.getElementById('chatInput'),q=input.value.trim();
+if(!q)return;
+var msgs=document.getElementById('chatMsgs');
+msgs.innerHTML+='<div class="chat-msg chat-user">'+q+'</div>';
+input.value='';
+fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:q})})
+.then(function(r){return r.json()})
+.then(function(d){
+msgs.innerHTML+='<div class="chat-msg chat-bot">'+d.reply+'</div>';
+msgs.scrollTop=msgs.scrollHeight;
+}).catch(function(){
+msgs.innerHTML+='<div class="chat-msg chat-bot">Sorry, something went wrong. Try again.</div>';
+msgs.scrollTop=msgs.scrollHeight;
+});
+}
+</script>
+</body>
+</html>

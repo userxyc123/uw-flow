@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "UW Branding Review",
+  "description": "When demo.html is edited, the agent reviews changes to ensure UW branding consistency — purple (#4b2e83), gold (#b7a57a), and cherry blossom theming are preserved.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "demo.html"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Review the changes to demo.html and verify that UW branding is consistent: primary purple (#4b2e83), gold accent (#b7a57a), cherry blossom theming. Flag any hardcoded colors that don't match the UW palette."
+  }
+}
