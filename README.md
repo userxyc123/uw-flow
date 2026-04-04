@@ -2,8 +2,8 @@
 
 **How I Built a Campus Movement App for UW Using Kiro**
 
-> Built with [Kiro](https://kiro.dev) — spec-driven development, agent hooks, and steering docs.
-> Contributor: Sakshi Verma
+> Built with [Kiro](https://kiro.dev) — spec-driven development, agent hooks, and steering docs.\n
+> Contributor: Sakshi Verma\n
 > Winner of AWS Reachback Building for Impact Hackathon: Most Innovative Use of Kiro
 
 ---
